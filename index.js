@@ -21,7 +21,11 @@ async function run() {
     try {
         		const servicesCollection = client
 							.db('spaCollection')
-							.collection('services');
+			.collection('services');
+		
+        		const reviewCollection = client
+							.db('spaCollection')
+							.collection('reviews');
 
 						app.get('/services', async (req, res) => {
 							const query = {};
@@ -44,6 +48,13 @@ async function run() {
 
 
 							})
+		
+		app.post('/reviews', async (req, res) => {
+			const reviews = req.body;
+			const result = await reviewCollection.insertOne(reviews);
+			res.send(result);
+		});
+		
 				app.get('/reviews', async (req, res) => {
 					let query = {};
 					if (req.query.email) {
