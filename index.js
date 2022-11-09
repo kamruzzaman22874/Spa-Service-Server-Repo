@@ -1,4 +1,5 @@
 const express = require('express');
+const jwt = require('jsonwebtoken')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const cors = require('cors')
@@ -25,7 +26,15 @@ async function run() {
 		
         		const reviewCollection = client
 							.db('spaCollection')
-							.collection('reviews');
+			.collection('reviews');
+		
+					app.post('/jwt', (req, res) => {
+						const user = req.body
+						console.log(user);
+						})
+
+
+		
 
 						app.get('/services', async (req, res) => {
 							const query = {};
@@ -71,6 +80,14 @@ async function run() {
 					const result = await servicesCollection.insertOne(services);
 					res.send(result);
 				});	
+
+		app.get('/reviews/:id', async (req, res) => {
+			const id = req.params.id;
+			const query = { ServiceId: id };
+			const cursor = reviewCollection.find(query);
+			const reviews = await cursor.toArray();
+			res.send(reviews);
+		});
 
 						
 				app.delete('/reviews/:id', async (req, res) => {
