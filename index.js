@@ -65,20 +65,32 @@ async function run() {
 					res.send(reviews);
 				});
 
-						app.post('/services', async (req, res) => {
-							const services = req.body;
-							// console.log(services);
-							const result = await servicesCollection.insertOne(services);
-							res.send(result);
-						});
+					app.post('/services', async (req, res) => {
+					const services = req.body;
+					// console.log(services);
+					const result = await servicesCollection.insertOne(services);
+					res.send(result);
+				});	
 
 						
-		app.delete('/reviews/:id', async (req, res) => {
-			const id = req.params.id;
-			const query = { _id: ObjectId(id) };
-			const result = await reviewCollection.deleteOne(query);
-			res.send(result);
-		});
+				app.delete('/reviews/:id', async (req, res) => {
+					const id = req.params.id;
+					const query = { _id: ObjectId(id) };
+					const result = await reviewCollection.deleteOne(query);
+					res.send(result);
+				});
+				app.patch('/reviews/:id', async (req, res) => {
+					const id = req.params.id;
+					const status = req.body.status;
+					const query = { _id: ObjectId(id) }
+					const updateDoc = {
+						$set: {
+							status: status
+						}
+					}
+					const result = await reviewCollection.updateOne(query, updateDoc)
+					res.send(result)
+				})
     }
     finally {
         
