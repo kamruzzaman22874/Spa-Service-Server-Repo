@@ -29,13 +29,16 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 			}
 			const token = authHeader.split(' ')[1];
 			jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
-
+				// console.log(decoded , err);
 				if (err) {
+					// console.log(err);
+
 				res.status(401).send({message: 'unauthorized access'})
 				}
 				req.decoded = decoded
 				next();
 			})
+			// console.log(token)
  		}
 
 async function run() {
@@ -52,7 +55,7 @@ async function run() {
 		
 					app.post('/jwt', (req, res) => {
 						const user = req.body
-						console.log(user);
+						// console.log(user);
 						const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
 							expiresIn: '1d',
 						});
@@ -91,18 +94,21 @@ async function run() {
 							});
 		
 							app.get('/reviews', verifyJWT, async (req, res) => {
-								const decoded = req.decoded
+								const decoded = req.decoded.email
+								const userEmail = req.query.email;
+								console.log(userEmail,decoded);
+
 								
-								if (decoded.email !== req.query.email) {
+								if (decoded !== userEmail) {
 									res.status(403).send({message: 'Forbidden access'})
 								}
-								let query = {};
+								
 								if (req.query.email) {
-									query = { email: req.query.email };
+									const query = {email:userEmail};
+									const cursor = reviewCollection.find(query);
+									const reviews = await cursor.toArray();
+									res.send(reviews);
 								}
-								const cursor = reviewCollection.find(query);
-								const reviews = await cursor.toArray();
-								res.send(reviews);
 							});
 
 								app.post('/services', async (req, res) => {
@@ -127,13 +133,22 @@ async function run() {
 									const result = await reviewCollection.deleteOne(query);
 									res.send(result);
 							});
-								app.patch('/reviews/:id', async (req, res) => {
-									const id = req.params.id;
-									const status = req.body.status;
-									const query = { _id: ObjectId(id) }
+								app.patch('/reviews',verifyJWT, async (req, res) => {
+
+									const userEmail = req.query.email;
+									const updatedId = req.query.id;
+									console.log(userEmail , updatedId);
+
+									const decoded = req.decoded.email
+									if (decoded !== userEmail) {
+										res.status(403).send({ message: 'Forbidden access' });
+									}
+									const currentReview = req.body.status;
+									console.log(currentReview);
+									const query = { _id: ObjectId(updatedId) }
 									const updateDoc = {
 										$set: {
-											status: status
+											message : currentReview
 										}
 									}
 									const result = await reviewCollection.updateOne(query, updateDoc)
