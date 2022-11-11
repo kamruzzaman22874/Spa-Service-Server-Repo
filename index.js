@@ -127,7 +127,8 @@ async function run() {
 				const userEmail = req.query.email;
 				const updatedId = req.query.id;
 				const currentReview = req.body.status;
-				console.log(userEmail, updatedId, currentReview);
+				console.log(currentReview);
+				// console.log(userEmail, updatedId, currentReview);
 
 				const decoded = req.decoded.email;
 				if (decoded !== userEmail) {
