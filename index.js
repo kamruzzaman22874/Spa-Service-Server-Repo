@@ -43,118 +43,108 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 async function run() {
     try {
-        		const servicesCollection = client
-							.db('spaCollection')
-			.collection('services');
-		
-        		const reviewCollection = client
-							.db('spaCollection')
-			.collection('reviews');
+			const servicesCollection = client
+				.db('spaCollection')
+				.collection('services');
 
-		
-		
-					app.post('/jwt', (req, res) => {
-						const user = req.body
-						// console.log(user);
-						const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-							expiresIn: '1d',
-						});
-						res.send({token})
-						})
+			const reviewCollection = client.db('spaCollection').collection('reviews');
 
+			app.post('/jwt', (req, res) => {
+				const user = req.body;
+				// console.log(user);
+				const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+					expiresIn: '1d',
+				});
+				res.send({ token });
+			});
 
-		
+			app.get('/services', async (req, res) => {
+				const query = {};
+				const cursor = servicesCollection.find(query);
+				const services = await cursor.toArray();
+				res.send(services);
+			});
 
-						app.get('/services', async (req, res) => {
-							const query = {};
-							const cursor = servicesCollection.find(query);
-							const services = await cursor.toArray();
-							res.send(services);
-						});
-		
-						app.get('/service', async (req, res) => {
-							const query = {};
-							const cursor = servicesCollection.find(query);
-							const services = await cursor.limit(3).toArray();
-							res.send(services);
-						});
-							app.get('/service/:id',async(req, res) => {
-							const id = req.params.id;
-							const query = { _id: ObjectId(id) };
-								const service = await servicesCollection.findOne(query);
-								res.send(service);
+			app.get('/service', async (req, res) => {
+				const query = {};
+				const cursor = servicesCollection.find(query);
+				const services = await cursor.limit(3).toArray();
+				res.send(services);
+			});
+			app.get('/service/:id', async (req, res) => {
+				const id = req.params.id;
+				const query = { _id: ObjectId(id) };
+				const service = await servicesCollection.findOne(query);
+				res.send(service);
+			});
 
+			//! Review Post....
+			app.post('/reviews', async (req, res) => {
+				const reviews = req.body;
+				const result = await reviewCollection.insertOne(reviews);
+				res.send(result);
+			});
 
-							})
-		
-							app.post('/reviews', async (req, res) => {
-								const reviews = req.body;
-								const result = await reviewCollection.insertOne(reviews);
-								res.send(result);
-							});
-		
-							app.get('/reviews', verifyJWT, async (req, res) => {
-								const decoded = req.decoded.email
-								const userEmail = req.query.email;
-								console.log(userEmail,decoded);
+			app.get('/reviews', verifyJWT, async (req, res) => {
+				const decoded = req.decoded.email;
+				const userEmail = req.query.email;
+				console.log(userEmail, decoded);
 
-								
-								if (decoded !== userEmail) {
-									res.status(403).send({message: 'Forbidden access'})
-								}
-								
-								if (req.query.email) {
-									const query = {email:userEmail};
-									const cursor = reviewCollection.find(query);
-									const reviews = await cursor.toArray();
-									res.send(reviews);
-								}
-							});
+				if (decoded !== userEmail) {
+					res.status(403).send({ message: 'Forbidden access' });
+				}
 
-								app.post('/services', async (req, res) => {
-								const services = req.body;
-								// console.log(services);
-								const result = await servicesCollection.insertOne(services);
-								res.send(result);
-							});	
+				if (req.query.email) {
+					const query = { email: userEmail };
+					const cursor = reviewCollection.find(query);
+					const reviews = await cursor.toArray();
+					res.send(reviews);
+				}
+			});
 
-								app.get('/reviews/:id', async (req, res) => {
-									const id = req.params.id;
-									const query = { ServiceId: id };
-									const cursor = reviewCollection.find(query);
-									const reviews = await cursor.toArray();
-									res.send(reviews);
-							});
+			app.post('/services', async (req, res) => {
+				const services = req.body;
+				// console.log(services);
+				const result = await servicesCollection.insertOne(services);
+				res.send(result);
+			});
 
-						
-								app.delete('/reviews/:id', async (req, res) => {
-									const id = req.params.id;
-									const query = { _id: ObjectId(id) };
-									const result = await reviewCollection.deleteOne(query);
-									res.send(result);
-							});
-								app.patch('/reviews',verifyJWT, async (req, res) => {
+			app.get('/reviews/:id', async (req, res) => {
+				const id = req.params.id;
+				const query = { ServiceId: id };
+				const cursor = reviewCollection.find(query);
+				const reviews = await cursor.toArray();
+				res.send(reviews);
+			});
 
-									const userEmail = req.query.email;
-									const updatedId = req.query.id;
-									console.log(userEmail , updatedId);
+			app.delete('/reviews/:id', async (req, res) => {
+				const id = req.params.id;
+				const query = { _id: ObjectId(id) };
+				const result = await reviewCollection.deleteOne(query);
+				res.send(result);
+			});
+			app.put('/reviews', verifyJWT, async (req, res) => {
+				const userEmail = req.query.email;
+				const updatedId = req.query.id;
+				const currentReview = req.body.status;
+				console.log(userEmail, updatedId, currentReview);
 
-									const decoded = req.decoded.email
-									if (decoded !== userEmail) {
-										res.status(403).send({ message: 'Forbidden access' });
-									}
-									const currentReview = req.body.status;
-									console.log(currentReview);
-									const query = { _id: ObjectId(updatedId) }
-									const updateDoc = {
-										$set: {
-											message : currentReview
-										}
-									}
-									const result = await reviewCollection.updateOne(query, updateDoc)
-									res.send(result)
-							})
-    }
+				const decoded = req.decoded.email;
+				if (decoded !== userEmail) {
+					res.status(403).send({ message: 'Forbidden access' });
+				}
+				console.log(currentReview);
+				const query = { _id: ObjectId(updatedId) };
+
+				const updateDoc = {
+					$set: {
+						message: currentReview,
+					},
+				};
+				const result = await reviewCollection.updateOne(query, updateDoc);
+				res.send(result);
+			});
+		}
     finally {
         
     }
